@@ -1,0 +1,18 @@
+# gen_fsm
+
+gen_fsm for clojure.
+
+## Usage
+
+See for yourself in the test (test/gen_fsm/test/core.clj), there are two fsm's implemented in this project:
+- gen_fsm.receiver implements a gen_server call-like-behaviour.
+- gen_fsm.test.count_fsm is a simple counter which is used in the test.
+
+
+## License
+
+Copyright (C) 2011
+
+Distributed under the Eclipse Public License, the same as Clojure.
+
+Ole Rixmann <rixmann.ole@googlemail.com> 12.8.2011
