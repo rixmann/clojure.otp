@@ -72,7 +72,7 @@
 										     (apply (module_resolve module 'terminate) [Reason state StateData]))
 			       [STOP Reason StateData] :when (= :stop STOP) (apply (module_resolve module 'terminate) [Reason state StateData])
 			       Val (with-exception (str "Module-callback returns wrong value.\nValue: " Val) State))
-			(with-exception "Event Funktion nicht gefunden" State)))];;(throw (Exception. (with-out-str (print "Error while matching in gen_fsm, got return value from state-fn: " Val))))))]
+			(with-exception "Event Funktion nicht gefunden" State)))]
      (condp = Tag
 	 event_tag (handler-fn state [state_data Event From])
 	 allstate_event_tag (handler-fn 'handle_allstate [state_data Event state From])

@@ -20,6 +20,8 @@
     (Thread/sleep 1000)
     (is (= 20000 (count_fsm/get_count Counter))
 	"Parallel sending failed")
+    (is (= "stimmt" (count_fsm/echo_allstate Counter "stimmt"))
+	"handle_allstate doesn't work")
     (is (= :stopping (count_fsm/stop Counter))
 	"Fsm not shutting down as expected")
     (is (= :terminated @Counter)
