@@ -17,6 +17,7 @@
 (declare handle_event)
 
 (def event_tag '$gen_fsm_event$)
+(def allstate_event_tag '$gen_fsm_allstate$)
 
 (def initializing_tag '$gen_fsm_initializing$)
 
@@ -39,36 +40,48 @@
   `(let [{:keys ~'[state state_data module]} ~State]
      ~@body))
 
-(defn send_event [Fsm Event]
-  (if (not (nil? Fsm))
-    (send Fsm
-	  handle_event
-	  event_tag
-	  Event *agent*)
-    :fsm_not_found))
+
+(defn send_event
+  ([Fsm Event]
+     (send_event Fsm Event event_tag))
+  ([Fsm Event Tag]
+     (if (not (nil? Fsm))
+       (send Fsm
+	     handle_event
+	     Tag
+	     Event
+	     *agent*)
+       :fsm_not_found)))
+
+(defn send_event_allstate [Fsm Event]
+  (send_event Fsm Event allstate_event_tag))
 
 (defn- handle_event [State Tag Event From]
-  (if (= Tag event_tag)
-    (with_state_values State
-		       (if-let [EventFn (module_resolve module state)]
-			 (match (apply EventFn [state_data Event From])
-				[NORESPONSE NextState NextStateData] :when (= :noresponse NORESPONSE) (assoc State :state NextState :state_data NextStateData)
-				
-				[RESPONSE Response NextState NextStateData] :when (= :response RESPONSE) (do
-													   (send_event From Response)
-													   (assoc State :state NextState :state_data NextStateData))
-				[STOP Reason Response StateData] :when (= :stop STOP) (do
-											(send_event From Response)
-											(apply (module_resolve module 'terminate) [Reason state StateData]))
-				[STOP Reason StateData] :when (= :stop STOP) (apply (module_resolve module 'terminate) [Reason state StateData])
-				Val  (throw (Exception. (with-out-str (print "Error while matching in gen_fsm, got return value from state-fn: " Val)))))
-			 State))
-    State))
+  (with_state_values
+   State
+   (let [handler-fn (fn [module-callback Params]
+		      (if-let [EventFn (module_resolve module module-callback)]
+			(match (apply EventFn Params)
+			       [NORESPONSE NextState NextStateData] :when (= :noresponse NORESPONSE) (assoc State :state NextState :state_data NextStateData)
+			       
+			       [RESPONSE Response NextState NextStateData] :when (= :response RESPONSE) (do
+													  (send_event From Response)
+													  (assoc State :state NextState :state_data NextStateData))
+			       [STOP Reason Response StateData] :when (= :stop STOP) (do
+										       (send_event From Response)
+										     (apply (module_resolve module 'terminate) [Reason state StateData]))
+			       [STOP Reason StateData] :when (= :stop STOP) (apply (module_resolve module 'terminate) [Reason state StateData])
+			       Val (with-exception (str "Module-callback returns wrong value.\nValue: " Val) State))
+			(with-exception "Event Funktion nicht gefunden" State)))];;(throw (Exception. (with-out-str (print "Error while matching in gen_fsm, got return value from state-fn: " Val))))))]
+     (condp = Tag
+	 event_tag (handler-fn state [state_data Event From])
+	 allstate_event_tag (handler-fn 'handle_allstate [state_data Event state From])
+	 Tag (with-exception (str "Tag stimmt nicht: " allstate_event_tag " =/= " Tag " =/= " event_tag) State)))))
   
 (defn receive_answer
-  ([Fsm Event] (receive_answer Fsm Event {}))
-  ([Fsm Event Options]
-     (let [ag (receiver/start_link Fsm Event)]
+  ([Fsm Event] (receive_answer Fsm Event false))
+  ([Fsm Event Allstate]
+     (let [ag (receiver/start_link Fsm Event Allstate)]
        (loop []
 	 (if (:state @ag)
 	   (recur)

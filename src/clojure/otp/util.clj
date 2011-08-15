@@ -10,3 +10,10 @@
 ;  (try
     (ns-resolve (symbol Module) (symbol Function))
 );    (catch java.lang.Exception e false)))
+
+(def *with-exception* true)
+
+(defmacro with-exception [Reason & body]
+  (if *with-exception*
+    `(throw (Exception. (str ~Reason)))
+    `(do ~@body)))

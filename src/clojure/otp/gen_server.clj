@@ -42,10 +42,14 @@
      (match Event
 	    [Cast Message] :when (= Cast cast-tag) (handle_cast Module Message ServerState)
 	    [Call Message] :when (= Call call-tag) (handle_call Module Message ServerState From)
-	    _ [:noresponse 'working ServerState])
+	    _ (with-exception "Tag ist falsch" [:noresponse 'working ServerState]))
      [A State Data] [A State (assoc StateData :state Data)]
-     [A Resp State Data] [A Resp State (assoc StateData :state Data)])))
-  
+     [A Resp State Data] [A Resp State (assoc StateData :state Data)]
+     Val (with-exception (str "handle_cast / handle_call haben falsche rückgabe geliefert: \n  " Val) StateData))))
+
+(defn handle_allstate [state_data Event state From]
+  [:noresponse 'working state_data])
+
 (defn terminate [Reason state state_data]
   (apply (module_resolve (:module state_data) 'terminate) [Reason (:state state_data)]))
 

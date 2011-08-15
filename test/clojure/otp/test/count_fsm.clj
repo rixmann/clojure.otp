@@ -6,7 +6,8 @@
 
 (ns clojure.otp.test.count_fsm
   (:use [pattern-match])
-  (:require [clojure.otp.gen_fsm :as gen_fsm]))
+  (:require [clojure.otp.gen_fsm :as gen_fsm]
+	    [clojure.otp.gen_fsm.receiver :as receiver]))
 
 (def module 'clojure.otp.test.count_fsm)
 
@@ -23,12 +24,20 @@
 (defn increase_noresp [Fsm]
   (gen_fsm/send_event Fsm "inc-and-re"))
 
+(defn echo_allstate [Fsm Msg]
+  (gen_fsm/receive_answer Fsm {:echo Msg} true))
+   
 (defn get_count [Fsm]
   (gen_fsm/get_data Fsm))
 
 
 ;;behavior
 (defn init [] ['counting 0])
+
+(defn handle_allstate [state_data Event state From]
+  (if-let [Msg (:echo Event)]
+    [:response Msg state state_data]
+    [:noresponse state state_data]))
 
 (defn counting [StateData Event From]
   (match Event

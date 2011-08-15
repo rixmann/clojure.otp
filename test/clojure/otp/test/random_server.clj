@@ -17,11 +17,13 @@
 (defn stop [Srv]
   (gen_server/cast Srv :stop))
 
+;;behavior
+
 (defn init []
   (java.util.Random.))
 
-(defn handle_cast [P State]
-  (if (= :produce P)
+(defn handle_cast [M State]
+  (if (= :produce M)
     (do
       (.nextInt State)
       [:noresponse State])
@@ -31,7 +33,6 @@
   (if (= Message :prod_and_answer)
     [:response (.nextInt State) State]
     [:noresponse State]))
-    ;; Val (.. System out (println (with-out-str (print "Error while matching in random_server, got return value from state-fn: " Val)))))
 
 (defn terminate [Reason State]
   :terminated)

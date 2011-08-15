@@ -8,13 +8,19 @@
 ;;  (:require [clojure.otp.gen_fsm :as gen_fsm])
   (:use pattern-match))
 
-(defn start_link [Fsm Event]
-  ((resolve 'clojure.otp.gen_fsm/start_link) 'clojure.otp.gen_fsm.receiver Fsm Event))
+(defn start_link
+  ([Fsm Event]
+     (start_link Fsm Event false))
+  ([Fsm Event AllState]
+     (apply (resolve 'clojure.otp.gen_fsm/start_link) ['clojure.otp.gen_fsm.receiver Fsm Event AllState])))
 
-(defn init [Fsm Event] (do
-			 ((resolve 'clojure.otp.gen_fsm/send_event) Fsm Event)
-;;			 (gen_fsm/send_event Fsm Event)
-			 ['requesting "nothing"]))
+(defn init [Fsm Event Allstate] (do
+				  ((if Allstate
+				     (resolve 'clojure.otp.gen_fsm/send_event_allstate)
+				     (resolve 'clojure.otp.gen_fsm/send_event))
+				        Fsm Event)
+				  ;;			 (gen_fsm/send_event Fsm Event)
+				  ['requesting "nothing"]))
 
 (defn requesting [_ Response _]
   [:stop :normal Response])
