@@ -14,25 +14,28 @@
 (defn get_a_random [Srv]
   (gen_server/call Srv :prod_and_answer))
 
+(defn count_ping [Pinger Pinged]
+  (gen_server/call Pinger [:ping Pinged]))
+
 (defn stop [Srv]
   (gen_server/cast Srv :stop))
 
 ;;behavior
 
 (defn init []
-  (java.util.Random.))
+  [(java.util.Random.) 0])
 
-(defn handle_cast [M State]
+(defn handle_cast [M [Ran Cnt]]
   (if (= :produce M)
     (do
-      (.nextInt State)
-      [:noresponse State])
-    [:stop :normal State]))
+      (.nextInt Ran)
+      [:noresponse [Ran Cnt]])
+    [:stop :terminated [Ran Cnt]]))
 
-(defn handle_call [Message State From]
+(defn handle_call [Message [Ran Cnt] From]
   (if (= Message :prod_and_answer)
-    [:response (.nextInt State) State]
-    [:noresponse State]))
+    [:response (.nextInt Ran) [Ran Cnt]]
+    [:noresponse [Ran Cnt]]))
 
 (defn terminate [Reason State]
-  :terminated)
+  Reason)

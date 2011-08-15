@@ -41,22 +41,31 @@
      ~@body))
 
 
-(defn send_event
-  ([Fsm Event]
-     (send_event Fsm Event event_tag))
-  ([Fsm Event Tag]
-     (if (not (nil? Fsm))
-       (send Fsm
-	     handle_event
-	     Tag
-	     Event
-	     *agent*)
-       :fsm_not_found)))
+(defn send_event_helper [Tag]
+  (fn helper
+    ([To Event]
+       (helper To Event *agent*))
+    ([To Event From]
+       (if (not (nil? To))
+	 (try (if-let [Fun (module_resolve (first To) 'send_hook)] ;;if the Fsm field is not an agent, it has to be a vector starting with the 'module. 
+		(Fun To Tag Event From) 
+		(send To
+		      handle_event
+		      Tag
+		      Event
+		      From))
+	      (catch Exception e (send To
+				       handle_event
+				       Tag
+				       Event
+				       From)))
+	 :fsm_not_found))))
 
-(defn send_event_allstate [Fsm Event]
-  (send_event Fsm Event allstate_event_tag))
+(def send_event (send_event_helper event_tag))
 
-(defn- handle_event [State Tag Event From]
+(def send_event_allstate (send_event_helper allstate_event_tag))
+
+(defn handle_event [State Tag Event From]
   (with_state_values
    State
    (let [handler-fn (fn [module-callback Params]

@@ -29,6 +29,7 @@
 
 (deftest gen_server
   (let [rs (random_server/start_link)]
+    (Thread/sleep 10)
     (is (= 'working (:state @rs))
 	"gen_server not started properly.")
     (random_server/produce_a_random rs)

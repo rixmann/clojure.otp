@@ -7,9 +7,9 @@
 (ns clojure.otp.util)
 
 (defn module_resolve [Module Function]
-;  (try
+  (try
     (ns-resolve (symbol Module) (symbol Function))
-);    (catch java.lang.Exception e false)))
+    (catch java.lang.Exception e nil)))
 
 (def *with-exception* true)
 
